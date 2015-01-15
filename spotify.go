@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/rckclmbr/goportify/Godeps/_workspace/src/github.com/op/go-libspotify/spotify"
-	"io/ioutil"
 	"os"
 	"time"
 )
@@ -21,7 +20,8 @@ type Playlist struct {
 }
 
 func NewSpotify() (*Spotify, error) {
-	appKey, err := ioutil.ReadFile("spotify_appkey.key")
+	appKey, err := Asset("spotify_appkey.key")
+	// appKey, err := ioutil.ReadFile("spotify_appkey.key")
 	if err != nil {
 		return nil, fmt.Errorf("You must have spotify_appkey.key")
 	}

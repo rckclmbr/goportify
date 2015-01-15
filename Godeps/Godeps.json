@@ -8,6 +8,10 @@
 			"Rev": "35bc42037350f0078e3c974c6ea690f1926603ab"
 		},
 		{
+			"ImportPath": "github.com/elazarl/go-bindata-assetfs",
+			"Rev": "fe5a90c9bd2990734f4928be5d3aeebb00f61f70"
+		},
+		{
 			"ImportPath": "github.com/op/go-libspotify/spotify",
 			"Rev": "f2935e4dc027c4cd1ab89607d5b35ca6a04ca71b"
 		}
