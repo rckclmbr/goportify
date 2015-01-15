@@ -1,22 +1,22 @@
 package main
 
 import (
-	"github.com/op/go-libspotify/spotify"
 	"fmt"
+	"github.com/rckclmbr/goportify/Godeps/_workspace/src/github.com/op/go-libspotify/spotify"
 	"io/ioutil"
 	"os"
 	"time"
 )
 
 type Spotify struct {
-	session *spotify.Session
-	running bool
-	login chan error
+	session  *spotify.Session
+	running  bool
+	login    chan error
 	loggedIn bool
 }
 
 type Playlist struct {
-	Uri string `json:"uri"`
+	Uri  string `json:"uri"`
 	Name string `json:"name"`
 }
 
@@ -26,9 +26,9 @@ func NewSpotify() (*Spotify, error) {
 		return nil, fmt.Errorf("You must have spotify_appkey.key")
 	}
 
-	session, err := spotify.NewSession(&spotify.Config {
-		ApplicationKey: appKey,
-		ApplicationName: "goportify",
+	session, err := spotify.NewSession(&spotify.Config{
+		ApplicationKey:   appKey,
+		ApplicationName:  "goportify",
 		CacheLocation:    "tmp",
 		SettingsLocation: "tmp",
 	})
@@ -95,15 +95,15 @@ func (sp *Spotify) LoggedIn() bool {
 
 func (sp *Spotify) Login(username string, password string) error {
 	creds := spotify.Credentials{
-		Username: username, 
+		Username: username,
 		Password: password,
 	}
 	sp.session.Login(creds, true)
 	select {
-	case l := <- sp.login:
+	case l := <-sp.login:
 		sp.loggedIn = true
 		return l
-	case <- time.After(10 * time.Second):
+	case <-time.After(10 * time.Second):
 		return fmt.Errorf("Timeout")
 	}
 }
@@ -116,21 +116,21 @@ func (sp *Spotify) AllPlaylists() []Playlist {
 	playlistContainer.Wait()
 
 	var playlists []Playlist
-	
+
 	for i := 0; i < playlistContainer.Playlists(); i++ {
 		switch playlistContainer.PlaylistType(i) {
-			case spotify.PlaylistTypeStartFolder:
-			case spotify.PlaylistTypeEndFolder:
-				// TODO: ?
-				continue
-			case spotify.PlaylistTypePlaylist:
-				playlist := playlistContainer.Playlist(i)
-				playlist.Wait()
-				p := Playlist {
-					playlist.Link().String(),
-					playlist.Name(),
-				}
-				playlists = append(playlists, p)
+		case spotify.PlaylistTypeStartFolder:
+		case spotify.PlaylistTypeEndFolder:
+			// TODO: ?
+			continue
+		case spotify.PlaylistTypePlaylist:
+			playlist := playlistContainer.Playlist(i)
+			playlist.Wait()
+			p := Playlist{
+				playlist.Link().String(),
+				playlist.Name(),
+			}
+			playlists = append(playlists, p)
 		}
 	}
 
@@ -147,17 +147,17 @@ func (sp *Spotify) PlaylistTracks(wantedPlaylist *Playlist) (chan string, int) {
 	var selectedPlaylist *spotify.Playlist
 	for i := 0; i < playlistContainer.Playlists(); i++ {
 		switch playlistContainer.PlaylistType(i) {
-			case spotify.PlaylistTypeStartFolder:
-			case spotify.PlaylistTypeEndFolder:
-				// TODO: ?
-				continue
-			case spotify.PlaylistTypePlaylist:
-				playlist := playlistContainer.Playlist(i)
-				playlist.Wait()
-				if playlist.Link().String() == wantedPlaylist.Uri {
-					selectedPlaylist = playlist
-					break
-				}
+		case spotify.PlaylistTypeStartFolder:
+		case spotify.PlaylistTypeEndFolder:
+			// TODO: ?
+			continue
+		case spotify.PlaylistTypePlaylist:
+			playlist := playlistContainer.Playlist(i)
+			playlist.Wait()
+			if playlist.Link().String() == wantedPlaylist.Uri {
+				selectedPlaylist = playlist
+				break
+			}
 		}
 	}
 

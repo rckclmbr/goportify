@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/rckclmbr/goportify/Godeps/_workspace/src/code.google.com/p/go-uuid/uuid"
 	"strings"
-	"code.google.com/p/go-uuid/uuid"
 )
 
 type DataPlaylistItem struct {
@@ -22,24 +22,24 @@ type MutationPlaylistItem struct {
 }
 
 type CreateTrackItem struct {
-	ClientId string `json:"clientId"`
-	CreationTimestamp string `json:"creationTimestamp"`
-	Deleted bool `json:"deleted"`
+	ClientId              string `json:"clientId"`
+	CreationTimestamp     string `json:"creationTimestamp"`
+	Deleted               bool   `json:"deleted"`
 	LastModifiedTimestamp string `json:"lastModifiedTimestamp"`
-	PlaylistId string `json:"playlistId"`
-	Source int `json:"source"`
-	TrackId string `json:"trackId"`
-	PrecedingEntryId string `json:"precendingEntryId"`
-	FollowingEntryId string `json:"followingEntryId"`
+	PlaylistId            string `json:"playlistId"`
+	Source                int    `json:"source"`
+	TrackId               string `json:"trackId"`
+	PrecedingEntryId      string `json:"precendingEntryId"`
+	FollowingEntryId      string `json:"followingEntryId"`
 }
 
 type CreatePlaylistItem struct {
-	CreationTimestamp string `json:"creationTimestamp"`
-	Deleted bool `json:"deleted"`
+	CreationTimestamp     string `json:"creationTimestamp"`
+	Deleted               bool   `json:"deleted"`
 	LastModifiedTimestamp string `json:"lastModifiedTimestamp"`
-	Name string `json:"name"`
-	Type string `json:"type"`
-	AccessControlled bool `json:"accessControlled"`
+	Name                  string `json:"name"`
+	Type                  string `json:"type"`
+	AccessControlled      bool   `json:"accessControlled"`
 }
 
 type SearchResult struct {
@@ -140,54 +140,53 @@ type MutateResponseContainer struct {
 }
 
 func buildAddTracks(playlistId string, songIds ...string) []MutationTrackItem {
-    mutations := make([]MutationTrackItem, len(songIds))
+	mutations := make([]MutationTrackItem, len(songIds))
 
-    prevId := ""
-    curId := uuid.New()
-    nextId := uuid.New()
+	prevId := ""
+	curId := uuid.New()
+	nextId := uuid.New()
 
-    for i, songId := range songIds {
-        details := MutationTrackItem{
-        	Create: CreateTrackItem{
-	            ClientId: curId,
-	            CreationTimestamp: "-1",
-	            Deleted: false,
-	            LastModifiedTimestamp: "0",
-	            PlaylistId: playlistId,
-	            Source: 1,
-	            TrackId: songId,
-	        },
-        }
-        if strings.HasPrefix(songId, "T") {
-        	details.Create.Source = 2 // AA track
-        }
+	for i, songId := range songIds {
+		details := MutationTrackItem{
+			Create: CreateTrackItem{
+				ClientId:              curId,
+				CreationTimestamp:     "-1",
+				Deleted:               false,
+				LastModifiedTimestamp: "0",
+				PlaylistId:            playlistId,
+				Source:                1,
+				TrackId:               songId,
+			},
+		}
+		if strings.HasPrefix(songId, "T") {
+			details.Create.Source = 2 // AA track
+		}
 
-        if i > 0 {
-        	details.Create.PrecedingEntryId = prevId
-        }
-        if i < len(songIds) - 1 {
-        	details.Create.FollowingEntryId = nextId
-        }
+		if i > 0 {
+			details.Create.PrecedingEntryId = prevId
+		}
+		if i < len(songIds)-1 {
+			details.Create.FollowingEntryId = nextId
+		}
 
-        mutations[i] = details
+		mutations[i] = details
 
-        prevId = curId
-        curId = nextId
-        nextId = uuid.New()
-    }
-    return mutations
+		prevId = curId
+		curId = nextId
+		nextId = uuid.New()
+	}
+	return mutations
 }
 
-
-func buildCreatePlaylist(name string, public bool) ([]MutationPlaylistItem) {
+func buildCreatePlaylist(name string, public bool) []MutationPlaylistItem {
 	mutations := make([]MutationPlaylistItem, 1)
 	mutations[0] = MutationPlaylistItem{
 		Create: CreatePlaylistItem{
-			CreationTimestamp: "-1",
-			Deleted: false,
+			CreationTimestamp:     "-1",
+			Deleted:               false,
 			LastModifiedTimestamp: "0",
-			Name: name,
-			Type: "USER_GENERATED",
+			Name:             name,
+			Type:             "USER_GENERATED",
 			AccessControlled: public,
 		},
 	}
@@ -197,8 +196,8 @@ func buildCreatePlaylist(name string, public bool) ([]MutationPlaylistItem) {
 // Parses the SID, LSID, and Auth of a login
 func parseAuthResponse(response string) (map[string]string, error) {
 	//   SID=DQAAAGgA...7Zg8CTN
-    //   LSID=DQAAAGsA...lk8BBbG
-    //   Auth=DQAAAGgA...dk3fA5N
+	//   LSID=DQAAAGsA...lk8BBbG
+	//   Auth=DQAAAGgA...dk3fA5N
 	res := make(map[string]string)
 	lines := strings.Split(response, "\n")
 	for _, line := range lines {
