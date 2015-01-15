@@ -134,34 +134,6 @@ func (g *Google) AddTracks(playlistId string, songIds []string) error {
 	return nil
 }
 
-func (goog *Google) CreateFullPlaylist(playlistName string, trackChan chan string, trackCount int, playlistNum int) error {
-	fmt.Printf("Processing playlist '%s'\n", playlistName)
-	googSongNids := []string{}
-	for i := 0; i < trackCount; i++ {
-		prefix := fmt.Sprintf("(%d:%d/%d)", playlistNum, i+1, trackCount)
-
-		trackName := <-trackChan
-		bestTrack, err := goog.FindBestTrack(trackName)
-		if err != nil {
-			fmt.Printf("%s: Couldn't find track: %s\n", prefix, err)
-			continue
-		}
-		googSongNids = append(googSongNids, bestTrack.Nid)
-		fmt.Printf("%s: '%s' -> '%s - %s'\n", prefix, trackName, bestTrack.Artist, bestTrack.Title)
-	}
-
-	fmt.Printf("Creating '%s' in Google Music\n", playlistName)
-	playlistId, err := goog.CreatePlaylist(playlistName, false)
-	if err != nil {
-		return fmt.Errorf("Error creating playlist: %v", err)
-	}
-	goog.AddTracks(playlistId, googSongNids)
-	if err != nil {
-		return fmt.Errorf("Error adding tracks to playlist: %v", err)
-	}
-	return nil
-}
-
 func (g *Google) execute(method string, url string, content interface{}) ([]byte, error) {
 	var req *http.Request
 	var err error

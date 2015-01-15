@@ -12,6 +12,19 @@
 			"Rev": "fe5a90c9bd2990734f4928be5d3aeebb00f61f70"
 		},
 		{
+			"ImportPath": "github.com/googollee/go-engine.io",
+			"Rev": "f4551ef981772ab0770bf9dec9c5cb5e4841cb55"
+		},
+		{
+			"ImportPath": "github.com/googollee/go-socket.io",
+			"Comment": "0.9.x-15-g18c9785",
+			"Rev": "18c97859bee1bdaab084b12ee1c9f1c195f8a64d"
+		},
+		{
+			"ImportPath": "github.com/gorilla/websocket",
+			"Rev": "ab5b3a61f5b6aa323d66ece457334396c4ccdd03"
+		},
+		{
 			"ImportPath": "github.com/op/go-libspotify/spotify",
 			"Rev": "f2935e4dc027c4cd1ab89607d5b35ca6a04ca71b"
 		}

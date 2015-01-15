@@ -1,22 +1,23 @@
+
 angular.module('portify', []).
   factory('portifyService', function($rootScope, $http, $q, $location) {
-    var portifyService = {};
+	var portifyService = {};
 
-    //Gets the list of nuclear weapons
-    portifyService.getSpotifyPlaylists = function() {
+	//Gets the list of nuclear weapons
+	portifyService.getSpotifyPlaylists = function() {
 		var deferred = $q.defer();
 		$http.get('/spotify/playlists')
-            .success(function(data) {
-                deferred.resolve(data.data);
-            })
+			.success(function(data) {
+				deferred.resolve(data.data);
+			})
 			.error(function(error){
 				$scope.error = error;
 				deferred.reject();
 				alert(error);
 			});
 
-        return deferred.promise;
-    };
+		return deferred.promise;
+	};
 
 	portifyService.startTransfer = function(lists) {
 		$http({
@@ -46,7 +47,7 @@ angular.module('portify', []).
 			});
 	};
 
-    return portifyService;
+	return portifyService;
   }).
 	factory('context', function($rootScope, $http, $q) {
 		var items = [];
@@ -69,7 +70,7 @@ angular.module('portify', []).
 		return context;
 	}).
 	factory('socket', function ($rootScope) {
-		var socket = io.connect("http://localhost:3132");
+		var socket = io()
 		return {
 			on: function (eventName, callback) {
 				socket.on(eventName, function () {
@@ -96,12 +97,12 @@ angular.module('portify', []).
 	$routeProvider.
 		  when('/', {templateUrl: '/partials/welcome.html', controller: WelcomeCtrl}).
 		  when('/about', {templateUrl: '/partials/about.html', controller: AboutCtrl}).
-	      when('/google/login', {templateUrl: '/partials/google_login.html', controller: GoogleLoginCtrl}).
+		  when('/google/login', {templateUrl: '/partials/google_login.html', controller: GoogleLoginCtrl}).
 		  when('/spotify/login', {templateUrl: '/partials/spotify_login.html', controller: SpotifyLoginCtrl}).
 		  when('/spotify/playlists/select', {templateUrl: '/partials/playlists.html', controller: SelectSpotifyCtrl}).
 		  when('/transfer/process_fancy', {templateUrl: '/partials/fancy_process.html', controller: FancyProcessTransferCtrl}).
 		  when('/transfer/process', {templateUrl: '/partials/process.html', controller: ProcessTransferCtrl}).
-	      otherwise({redirectTo: '/'});
+		  otherwise({redirectTo: '/'});
   }).
 	directive('scrollGlue', function() {
 		return {

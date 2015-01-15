@@ -19,6 +19,11 @@ type Playlist struct {
 	Name string `json:"name"`
 }
 
+type BasicTrack struct {
+	Uri string `json:"uri"`
+	Name string `json:"name"`
+}
+
 func NewSpotify() (*Spotify, error) {
 	appKey, err := Asset("spotify_appkey.key")
 	// appKey, err := ioutil.ReadFile("spotify_appkey.key")
@@ -137,7 +142,7 @@ func (sp *Spotify) AllPlaylists() []Playlist {
 	return playlists
 }
 
-func (sp *Spotify) PlaylistTracks(wantedPlaylist *Playlist) (chan string, int) {
+func (sp *Spotify) PlaylistTracks(wantedPlaylist *Playlist) (chan BasicTrack, int) {
 
 	playlistContainer, err := sp.session.Playlists()
 	if err != nil {
@@ -161,14 +166,17 @@ func (sp *Spotify) PlaylistTracks(wantedPlaylist *Playlist) (chan string, int) {
 		}
 	}
 
-	ret := make(chan string)
+	ret := make(chan BasicTrack)
 	go func() {
 		for j := 0; j < selectedPlaylist.Tracks(); j++ {
 			track := selectedPlaylist.Track(j).Track()
 			track.Wait()
 			artist := track.Artist(0)
 			artist.Wait()
-			ret <- fmt.Sprintf("%s - %s", artist.Name(), track.Name())
+			ret <- BasicTrack{
+				Uri: track.Link().String(),
+				Name: fmt.Sprintf("%s - %s", artist.Name(), track.Name()),
+			}
 		}
 		close(ret)
 	}()

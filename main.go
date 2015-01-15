@@ -4,14 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/rckclmbr/goportify/Godeps/_workspace/src/github.com/elazarl/go-bindata-assetfs"
+	"github.com/rckclmbr/goportify/Godeps/_workspace/src/github.com/googollee/go-socket.io"
 	"log"
 	"net/http"
 )
 
 var (
 	debug = false
-	sp    *Spotify
-	goog  *Google
 )
 
 //{"status": 200, "message": "ok", "data":
@@ -21,33 +20,93 @@ type Response struct {
 	Data    interface{} `json:"data"`
 }
 
+type SocketIOResponse struct {
+	Type string      `json:"type"`
+	Data interface{} `json:"data"`
+}
+
+type PlaylistType struct {
+	Playlist Playlist `json:"playlist"`
+	Name     string    `json:"name"`
+}
+
+type PlaylistLengthType struct {
+	Length int `json:"length"`
+}
+
+type TrackType struct {
+	SpotifyTrackUri string `json:"spotify_track_uri"`
+	Name            string `json:"name"`
+	Cover           string `json:"cover"`
+}
+
+type AddedType struct {
+	SpotifyTrackUri  string `json:"spotify_track_uri"`
+	SpotifyTrackName string `json:"spotify_track_name"`
+	Found           bool   `json:"found"`
+	Karaoke         bool   `json:"karaoke"`
+}
+
 type LoginRequest struct {
 	Email    string `json:"email"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
+type Server struct {
+	goog *Google
+	sp   *Spotify
+	sios *socketio.Server
+	sio  socketio.Socket
+}
+
+func newServer() (*Server, error) {
+	goog := NewGoogle()
+	sp, err := NewSpotify()
+	if err != nil {
+		return nil, fmt.Errorf("Error initializting spotify: %s", err)
+	}
+
+	ioServer, err := socketio.NewServer(nil)
+	if err != nil {
+		return nil, fmt.Errorf("Error creating socketio server: %s", err)
+	}
+	server := &Server{goog: goog, sp: sp, sios: ioServer}
+
+	ioServer.On("connection", func(so socketio.Socket) {
+		so.On("test", func(msg string) {
+			fmt.Println(msg)
+			})
+		server.sio = so
+	})
+	ioServer.On("error", func(so socketio.Socket, err error) {
+		fmt.Printf("socketio error: %s", err)
+	})
+
+	return server, nil
+}
+
 func main() {
 
-	http.HandleFunc("/google/login", googleLogin)
-	http.HandleFunc("/spotify/login", spotifyLogin)
-	http.HandleFunc("/spotify/playlists", spotifyPlaylists)
-	http.HandleFunc("/portify/transfer/start", transferStart)
+	server, err := newServer()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	http.Handle("/socket.io/", server.sios)
+	http.HandleFunc("/google/login", server.googleLogin)
+	http.HandleFunc("/spotify/login", server.spotifyLogin)
+	http.HandleFunc("/spotify/playlists", server.spotifyPlaylists)
+	http.HandleFunc("/portify/transfer/start", server.transferStart)
+
 	fs := http.FileServer(&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, Prefix: "static"})
 	http.Handle("/", fs)
 
-	var err error
-	goog = NewGoogle()
-	sp, err = NewSpotify()
-	if err != nil {
-		log.Fatal("Error initializing spotify: %v", err)
-	}
-
-	fmt.Printf("Starting server on port 3132\n")
+	fmt.Printf("Open your browser and go to http://localhost:3132\n")
 	panic(http.ListenAndServe(":3132", nil))
 }
 
-func googleLogin(w http.ResponseWriter, r *http.Request) {
+func (s *Server) googleLogin(w http.ResponseWriter, r *http.Request) {
 	var response *Response
 	var login LoginRequest
 	decoder := json.NewDecoder(r.Body)
@@ -57,7 +116,7 @@ func googleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = goog.Login(login.Email, login.Password)
+	err = s.goog.Login(login.Email, login.Password)
 
 	if err != nil {
 		response = &Response{Status: 400, Message: "login failed."}
@@ -75,7 +134,7 @@ func googleLogin(w http.ResponseWriter, r *http.Request) {
 	w.Write(js)
 }
 
-func spotifyLogin(w http.ResponseWriter, r *http.Request) {
+func (s *Server) spotifyLogin(w http.ResponseWriter, r *http.Request) {
 	var response *Response
 	var login LoginRequest
 	decoder := json.NewDecoder(r.Body)
@@ -85,7 +144,7 @@ func spotifyLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = sp.Login(login.Username, login.Password)
+	err = s.sp.Login(login.Username, login.Password)
 	if err != nil {
 		response = &Response{Status: 400, Message: "login failed."}
 	} else {
@@ -102,12 +161,12 @@ func spotifyLogin(w http.ResponseWriter, r *http.Request) {
 	w.Write(js)
 }
 
-func spotifyPlaylists(w http.ResponseWriter, r *http.Request) {
+func (s *Server) spotifyPlaylists(w http.ResponseWriter, r *http.Request) {
 	var response *Response
-	if !sp.LoggedIn() {
+	if !s.sp.LoggedIn() {
 		response = &Response{Status: 402, Message: "Spotify: not logged in"}
 	} else {
-		spPlaylists := sp.AllPlaylists()
+		spPlaylists := s.sp.AllPlaylists()
 		response = &Response{Status: 200, Message: "ok", Data: spPlaylists}
 	}
 
@@ -121,7 +180,7 @@ func spotifyPlaylists(w http.ResponseWriter, r *http.Request) {
 	w.Write(js)
 }
 
-func transferStart(w http.ResponseWriter, r *http.Request) {
+func (s *Server) transferStart(w http.ResponseWriter, r *http.Request) {
 	var response *Response
 
 	var playlists []Playlist
@@ -131,16 +190,16 @@ func transferStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !goog.LoggedIn() {
+	if !s.goog.LoggedIn() {
 		response = &Response{Status: 401, Message: "Google: not logged in."}
-	} else if !sp.LoggedIn() {
+	} else if !s.sp.LoggedIn() {
 		response = &Response{Status: 402, Message: "Spotify: not logged in"}
 	} else if len(playlists) == 0 {
 		response = &Response{Status: 403, Message: "Please select at least one playlist."}
 	}
 
 	if response == nil {
-		go doTransferStart(playlists)
+		go s.doTransferStart(playlists)
 		response = &Response{Status: 200, Message: "transfer will start."}
 	}
 
@@ -154,7 +213,7 @@ func transferStart(w http.ResponseWriter, r *http.Request) {
 	w.Write(js)
 }
 
-func doTransferStart(playlists []Playlist) {
+func (s *Server) doTransferStart(playlists []Playlist) {
 	// Convert to map to check for playlist
 	playlistMap := make(map[string]bool)
 	for _, playlist := range playlists {
@@ -162,27 +221,75 @@ func doTransferStart(playlists []Playlist) {
 	}
 
 	// Iterate over all spotify playlists (should be cached anyway)
-	spPlaylists := sp.AllPlaylists()
+	spPlaylists := s.sp.AllPlaylists()
 	done := make(chan int)
 	playlistCount := 0
 	for _, spPlaylist := range spPlaylists {
-		trackChan, count := sp.PlaylistTracks(&spPlaylist)
+		trackChan, count := s.sp.PlaylistTracks(&spPlaylist)
+		s.sio.Emit("portify", &SocketIOResponse{"playlist_done", PlaylistLengthType{count}})
 
 		if _, ok := playlistMap[spPlaylist.Uri]; ok {
 			playlistCount += 1
-			go func(i int, name string) {
-				err := goog.CreateFullPlaylist(name, trackChan, count, i)
+			go func(i int, playlist Playlist) {
+				s.sio.Emit("portify", &SocketIOResponse{"playlist_started", PlaylistType{playlist, playlist.Name}})
+				err := s.createFullPlaylist(playlist.Name, trackChan, count, i)
+				s.sio.Emit("portify", &SocketIOResponse{"playlist_done", PlaylistType{playlist, playlist.Name}})
 				if err != nil {
-					fmt.Printf("Error creating playlist %s: %v", name, err)
+					fmt.Printf("Error creating playlist %s: %v", playlist.Name, err)
 				}
 				done <- i
-			}(playlistCount, spPlaylist.Name)
+			}(playlistCount, spPlaylist)
 		}
 	}
 
 	for i := 0; i < playlistCount; i++ {
 		<-done
 	}
+	s.sio.Emit("portify", &SocketIOResponse{"all_done", nil})
 	fmt.Printf("Complete\n")
 
+}
+
+func (s *Server) createFullPlaylist(playlistName string, trackChan chan BasicTrack, trackCount int, playlistNum int) error {
+	fmt.Printf("Processing playlist '%s'\n", playlistName)
+	googSongNids := []string{}
+	for i := 0; i < trackCount; i++ {
+		prefix := fmt.Sprintf("(%d:%d/%d)", playlistNum, i+1, trackCount)
+
+		track := <-trackChan
+		bestTrack, err := s.goog.FindBestTrack(track.Name)
+		if err != nil {
+			fmt.Printf("%s: Couldn't find track: %s\n", prefix, err)
+			s.sio.Emit("gmusic", &SocketIOResponse{"not_added",
+				AddedType{
+					Found:            false,
+					SpotifyTrackUri:  track.Uri,
+					SpotifyTrackName: track.Name,
+				},
+			},
+			)
+			continue
+		}
+		googSongNids = append(googSongNids, bestTrack.Nid)
+		fmt.Printf("%s: '%s' -> '%s - %s'\n", prefix, track.Name, bestTrack.Artist, bestTrack.Title)
+		s.sio.Emit("gmusic", &SocketIOResponse{"added",
+			AddedType{
+				Found:            true,
+				SpotifyTrackUri:  track.Uri,
+				SpotifyTrackName: track.Name,
+			},
+		},
+		)
+	}
+
+	fmt.Printf("Creating '%s' in Google Music\n", playlistName)
+	playlistId, err := s.goog.CreatePlaylist(playlistName, false)
+	if err != nil {
+		return fmt.Errorf("Error creating playlist: %v", err)
+	}
+	s.goog.AddTracks(playlistId, googSongNids)
+	if err != nil {
+		return fmt.Errorf("Error adding tracks to playlist: %v", err)
+	}
+	return nil
 }
