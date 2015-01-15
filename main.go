@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/rckclmbr/goportify/Godeps/_workspace/src/github.com/elazarl/go-bindata-assetfs" // My excuse is that portify stored it in global state too
+	"github.com/rckclmbr/goportify/Godeps/_workspace/src/github.com/elazarl/go-bindata-assetfs"
 	"log"
 	"net/http"
 )

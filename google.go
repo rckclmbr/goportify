@@ -14,14 +14,14 @@ const LOGINURL = "https://www.google.com/accounts/ClientLogin"
 
 type Google struct {
 	client *http.Client
-	auth string
+	auth   string
 }
 
 // A subset of the SearchResult track containing only the data we need
 type RelevantTrack struct {
-	Nid string
+	Nid    string
 	Artist string
-	Title string
+	Title  string
 }
 
 func NewGoogle() *Google {
@@ -37,11 +37,11 @@ func (g *Google) Login(email string, password string) error {
 
 	resp, err := g.client.PostForm(LOGINURL,
 		url.Values{
-			"Email": {email},
-			"Passwd": {password},
+			"Email":       {email},
+			"Passwd":      {password},
 			"accountType": {"HOSTED_OR_GOOGLE"},
-			"source": {"goportify"},
-			"service": {"sj"},
+			"source":      {"goportify"},
+			"service":     {"sj"},
 		})
 
 	if err != nil {
@@ -96,20 +96,20 @@ func (g *Google) FindBestTrack(query string) (*RelevantTrack, error) {
 		// Filter only tracks
 		if entry.Type == "1" {
 			return &RelevantTrack{
-				Nid: entry.Track.Nid,
+				Nid:    entry.Track.Nid,
 				Artist: entry.Track.Artist,
-				Title: entry.Track.Title,
+				Title:  entry.Track.Title,
 			}, nil
-		}	
+		}
 	}
 	return nil, fmt.Errorf("No tracks for %s", query)
 }
 
 func (g *Google) CreatePlaylist(name string, public bool) (string, error) {
 	mutations := buildCreatePlaylist(name, public)
-	content := &DataPlaylistItem{ mutations }
+	content := &DataPlaylistItem{mutations}
 
-	body, err := g.execute("POST", SJURL + "playlistbatch?alt=json", content)
+	body, err := g.execute("POST", SJURL+"playlistbatch?alt=json", content)
 	if err != nil {
 		return "", fmt.Errorf("Couldn't execute playlistbatch: %v", err)
 	}
@@ -125,9 +125,9 @@ func (g *Google) CreatePlaylist(name string, public bool) (string, error) {
 
 func (g *Google) AddTracks(playlistId string, songIds []string) error {
 	mutations := buildAddTracks(playlistId, songIds...)
-	content := &DataTrackItem{ mutations }
+	content := &DataTrackItem{mutations}
 
-	_, err := g.execute("POST", SJURL + "plentriesbatch?alt=json", content)
+	_, err := g.execute("POST", SJURL+"plentriesbatch?alt=json", content)
 	if err != nil {
 		return fmt.Errorf("Couldn't execute http query: %v", err)
 	}
@@ -140,7 +140,7 @@ func (goog *Google) CreateFullPlaylist(playlistName string, trackChan chan strin
 	for i := 0; i < trackCount; i++ {
 		prefix := fmt.Sprintf("(%d:%d/%d)", playlistNum, i+1, trackCount)
 
-		trackName := <- trackChan
+		trackName := <-trackChan
 		bestTrack, err := goog.FindBestTrack(trackName)
 		if err != nil {
 			fmt.Printf("%s: Couldn't find track: %s\n", prefix, err)
