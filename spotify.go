@@ -20,7 +20,7 @@ type Playlist struct {
 }
 
 type BasicTrack struct {
-	Uri string `json:"uri"`
+	Uri  string `json:"uri"`
 	Name string `json:"name"`
 }
 
@@ -174,7 +174,7 @@ func (sp *Spotify) PlaylistTracks(wantedPlaylist *Playlist) (chan BasicTrack, in
 			artist := track.Artist(0)
 			artist.Wait()
 			ret <- BasicTrack{
-				Uri: track.Link().String(),
+				Uri:  track.Link().String(),
 				Name: fmt.Sprintf("%s - %s", artist.Name(), track.Name()),
 			}
 		}

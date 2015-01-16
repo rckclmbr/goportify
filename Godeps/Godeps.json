@@ -27,6 +27,10 @@
 		{
 			"ImportPath": "github.com/op/go-libspotify/spotify",
 			"Rev": "f2935e4dc027c4cd1ab89607d5b35ca6a04ca71b"
+		},
+		{
+			"ImportPath": "github.com/skratchdot/open-golang/open",
+			"Rev": "ba570a111973b539baf23c918213059543b5bb6e"
 		}
 	]
 }

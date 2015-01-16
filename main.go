@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/rckclmbr/goportify/Godeps/_workspace/src/github.com/elazarl/go-bindata-assetfs"
 	"github.com/rckclmbr/goportify/Godeps/_workspace/src/github.com/googollee/go-socket.io"
+	"github.com/rckclmbr/goportify/Godeps/_workspace/src/github.com/skratchdot/open-golang/open"
 	"log"
 	"net/http"
 )
@@ -27,7 +28,7 @@ type SocketIOResponse struct {
 
 type PlaylistType struct {
 	Playlist Playlist `json:"playlist"`
-	Name     string    `json:"name"`
+	Name     string   `json:"name"`
 }
 
 type PlaylistLengthType struct {
@@ -43,8 +44,8 @@ type TrackType struct {
 type AddedType struct {
 	SpotifyTrackUri  string `json:"spotify_track_uri"`
 	SpotifyTrackName string `json:"spotify_track_name"`
-	Found           bool   `json:"found"`
-	Karaoke         bool   `json:"karaoke"`
+	Found            bool   `json:"found"`
+	Karaoke          bool   `json:"karaoke"`
 }
 
 type LoginRequest struct {
@@ -76,7 +77,7 @@ func newServer() (*Server, error) {
 	ioServer.On("connection", func(so socketio.Socket) {
 		so.On("test", func(msg string) {
 			fmt.Println(msg)
-			})
+		})
 		server.sio = so
 	})
 	ioServer.On("error", func(so socketio.Socket, err error) {
@@ -102,7 +103,7 @@ func main() {
 	fs := http.FileServer(&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, Prefix: "static"})
 	http.Handle("/", fs)
 
-	fmt.Printf("Open your browser and go to http://localhost:3132\n")
+	open.Run("http://localhost:3132/")
 	panic(http.ListenAndServe(":3132", nil))
 }
 
@@ -279,7 +280,7 @@ func (s *Server) createFullPlaylist(playlistName string, trackChan chan BasicTra
 	}
 
 	for i := 0; i < trackCount; i++ {
-		<- done
+		<-done
 	}
 
 	fmt.Printf("Creating '%s' in Google Music\n", playlistName)
