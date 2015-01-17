@@ -224,22 +224,24 @@ func (s *Server) doTransferStart(playlists []Playlist) {
 	// Iterate over all spotify playlists (should be cached anyway)
 	spPlaylists := s.sp.AllPlaylists()
 	for i, spPlaylist := range spPlaylists {
-		trackChan, count := s.sp.PlaylistTracks(&spPlaylist)
-		s.sio.Emit("portify", &SocketIOResponse{"playlist_length", PlaylistLengthType{count}})
-
 		if _, ok := playlistMap[spPlaylist.Uri]; ok {
-			s.sio.Emit("portify", &SocketIOResponse{"playlist_started", PlaylistType{spPlaylist, spPlaylist.Name}})
-			err := s.createFullPlaylist(spPlaylist.Name, trackChan, count, i)
-			s.sio.Emit("portify", &SocketIOResponse{"playlist_done", PlaylistType{spPlaylist, spPlaylist.Name}})
-			if err != nil {
-				fmt.Printf("Error creating playlist %s: %v", spPlaylist.Name, err)
-			}
+			s.startPlaylist(i, spPlaylist)
 		}
 	}
 
 	s.sio.Emit("portify", &SocketIOResponse{"all_done", nil})
 	fmt.Printf("Complete\n")
+}
 
+func (s *Server) startPlaylist(i int, spPlaylist Playlist) {
+	trackChan, count := s.sp.PlaylistTracks(&spPlaylist)
+	s.sio.Emit("portify", &SocketIOResponse{"playlist_length", PlaylistLengthType{count}})
+	s.sio.Emit("portify", &SocketIOResponse{"playlist_started", PlaylistType{spPlaylist, spPlaylist.Name}})
+	err := s.createFullPlaylist(spPlaylist.Name, trackChan, count, i)
+	s.sio.Emit("portify", &SocketIOResponse{"playlist_done", PlaylistType{spPlaylist, spPlaylist.Name}})
+	if err != nil {
+		fmt.Printf("Error creating playlist %s: %v", spPlaylist.Name, err)
+	}
 }
 
 func (s *Server) createFullPlaylist(playlistName string, trackChan chan BasicTrack, trackCount int, playlistNum int) error {

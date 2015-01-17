@@ -120,7 +120,7 @@ func (sp *Spotify) AllPlaylists() []Playlist {
 	}
 	playlistContainer.Wait()
 
-	var playlists []Playlist
+	playlists := []Playlist{Playlist{ "starred", "Starred Tracks", },}
 
 	for i := 0; i < playlistContainer.Playlists(); i++ {
 		switch playlistContainer.PlaylistType(i) {
@@ -150,18 +150,22 @@ func (sp *Spotify) PlaylistTracks(wantedPlaylist *Playlist) (chan BasicTrack, in
 	}
 	playlistContainer.Wait()
 	var selectedPlaylist *spotify.Playlist
-	for i := 0; i < playlistContainer.Playlists(); i++ {
-		switch playlistContainer.PlaylistType(i) {
-		case spotify.PlaylistTypeStartFolder:
-		case spotify.PlaylistTypeEndFolder:
-			// TODO: ?
-			continue
-		case spotify.PlaylistTypePlaylist:
-			playlist := playlistContainer.Playlist(i)
-			playlist.Wait()
-			if playlist.Link().String() == wantedPlaylist.Uri {
-				selectedPlaylist = playlist
-				break
+	if wantedPlaylist.Uri == "starred" {
+		selectedPlaylist = sp.session.Starred()
+	} else {
+		for i := 0; i < playlistContainer.Playlists(); i++ {
+			switch playlistContainer.PlaylistType(i) {
+			case spotify.PlaylistTypeStartFolder:
+			case spotify.PlaylistTypeEndFolder:
+				// TODO: ?
+				continue
+			case spotify.PlaylistTypePlaylist:
+				playlist := playlistContainer.Playlist(i)
+				playlist.Wait()
+				if playlist.Link().String() == wantedPlaylist.Uri {
+					selectedPlaylist = playlist
+					break
+				}
 			}
 		}
 	}
