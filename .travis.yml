@@ -3,4 +3,4 @@ go:
   - 1.3
 install:
   - go get -u github.com/jteeuwen/go-bindata/...
-  - go-bindata -o static.go static/... spotify_appkey.key
+  - go-bindata -o portify/static.go static/... spotify_appkey.key

@@ -1,6 +1,9 @@
 {
 	"ImportPath": "github.com/rckclmbr/goportify",
 	"GoVersion": "go1.3.3",
+	"Packages": [
+		"./..."
+	],
 	"Deps": [
 		{
 			"ImportPath": "code.google.com/p/go-uuid/uuid",

@@ -1,3 +1,2 @@
 tmp
-goportify_darwin_amd64
-static.go
+portify/static.go
